@@ -1,11 +1,14 @@
+import 'dart:io';
+import 'package:path/path.dart';
+
 import 'package:awesome_dialog/awesome_dialog.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:firstflutterfireproject/components/custombuttonauth.dart';
 import 'package:firstflutterfireproject/components/customtextfieldadd.dart';
 import 'package:firstflutterfireproject/note/view.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:image_picker/image_picker.dart';
 
 class AddNotes extends StatefulWidget {
   final String docid;
@@ -23,7 +26,31 @@ class _AddNotes extends State<AddNotes> {
 
   bool isLoading = false;
 
-  AddNotes() async {
+  File? file;
+  String? url;
+
+  getimage() async {
+    final ImagePicker picker = ImagePicker();
+// Pick an image.
+    final XFile? imageGallery =
+        await picker.pickImage(source: ImageSource.gallery);
+// Capture a photo.
+    // final XFile? imageCamera =
+    //     await picker.pickImage(source: ImageSource.camera);
+    if (imageGallery != null) {
+      file = File(imageGallery.path);
+      var imagename = basename(imageGallery.path);
+
+      var refStorage = FirebaseStorage.instance.ref("images").child(imagename);
+      await refStorage.putFile(file!);
+
+      url = await refStorage.getDownloadURL();
+    }
+
+    setState(() {});
+  }
+
+  AddNotes(context) async {
     CollectionReference noteCollection = FirebaseFirestore.instance
         .collection('categories')
         .doc(widget.docid)
@@ -34,9 +61,11 @@ class _AddNotes extends State<AddNotes> {
       try {
         isLoading = true;
         setState(() {});
-        DocumentReference response = await noteCollection.add({
-          "note": note.text,
-        });
+        DocumentReference response =
+            await noteCollection.add({"note": note.text, "url": url ?? "none"});
+        //Called also null operator. This operator returns expression on its left,
+        //except if it is null, and if so, it returns right expression:
+        // for more information visit :https://jelenaaa.medium.com/what-are-in-dart-df1f11706dd6
 
         Navigator.of(context).push(
           MaterialPageRoute(
@@ -87,10 +116,17 @@ class _AddNotes extends State<AddNotes> {
                       },
                     ),
                   ),
+                  CustomButtonUpload(
+                    title: "Upload Image",
+                    isSelected: url == null ? false : true,
+                    onPressed: () {
+                      getimage();
+                    },
+                  ),
                   CustomButtonAuth(
                     title: "Add",
                     onPressed: () {
-                      AddNotes();
+                      AddNotes(context);
                     },
                   )
                 ],

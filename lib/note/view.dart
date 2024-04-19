@@ -1,8 +1,10 @@
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:firstflutterfireproject/categories/edit.dart';
 import 'package:firstflutterfireproject/note/add.dart';
+import 'package:firstflutterfireproject/note/edit.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
@@ -83,41 +85,64 @@ class _NoteView extends State<NoteView> {
                     crossAxisCount: 2, mainAxisExtent: 170),
                 itemBuilder: (BuildContext context, int index) {
                   return InkWell(
-                    onLongPress: () {
-                      AwesomeDialog(
-                        context: context,
-                        dialogType: DialogType.warning,
-                        animType: AnimType.rightSlide,
-                        title: 'Warning',
-                        desc: 'Delete Category?',
-                        btnOkText: "Update",
-                        btnOkOnPress: () {
-                          // Navigator.of(context).push(MaterialPageRoute(
-                          //   builder: (context) => Editcategory(
-                          //       docid: data[index].id,
-                          //       oldName: data[index]["name"]),
-                          // ));
-                        },
-                        btnCancelText: "Delete",
-                        btnCancelOnPress: () async {
-                          // await FirebaseFirestore.instance
-                          //     .collection("categories")
-                          //     .doc(data[index].id)
-                          //     .delete();
-                          // Navigator.of(context).pushReplacementNamed("NoteView");
-                        },
-                      ).show();
-                    },
                     child: Card(
                       child: Container(
                         padding: EdgeInsets.all(15),
                         child: Column(
                           children: [
                             Text("${data[index]["note"]}"),
+                            SizedBox(
+                              height: 7,
+                            ),
+                            if (data[index]["url"] != "none")
+                              Image.network(
+                                data[index]["url"],
+                                width: 100,
+                                height: 100,
+                              )
                           ],
                         ),
                       ),
                     ),
+                    onTap: () {
+                      Navigator.of(context).push(MaterialPageRoute(
+                        builder: (context) => EditNotes(
+                          notedocid: data[index].id,
+                          categoryid: widget.categoryid,
+                          oldNote: data[index]["note"],
+                        ),
+                      ));
+                    },
+                    onLongPress: () {
+                      AwesomeDialog(
+                        context: context,
+                        dialogType: DialogType.warning,
+                        animType: AnimType.rightSlide,
+                        title: 'Warning',
+                        desc: 'are you sure you want to delete note?',
+                        btnOkText: "Delete",
+                        btnOkOnPress: () async {
+                          await FirebaseFirestore.instance
+                              .collection("categories")
+                              .doc(widget.categoryid)
+                              .collection("note")
+                              .doc(data[index].id)
+                              .delete();
+
+                          if (data[index]["url"] != "none") {
+                            FirebaseStorage.instance
+                                .refFromURL(data[index]["url"])
+                                .delete();
+                          }
+                          Navigator.of(context).push(MaterialPageRoute(
+                            builder: (context) =>
+                                NoteView(categoryid: widget.categoryid),
+                          ));
+                        },
+                        btnCancelText: "Cancel",
+                        btnCancelOnPress: () async {},
+                      ).show();
+                    },
                   );
                 },
               ),

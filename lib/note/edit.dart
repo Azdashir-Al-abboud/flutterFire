@@ -8,11 +8,15 @@ import 'package:flutter/widgets.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class EditNotes extends StatefulWidget {
-  final String notedocid;
   final String categoryid;
+  final String notedocid;
+  final String oldNote;
 
   const EditNotes(
-      {super.key, required this.notedocid, required this.categoryid});
+      {super.key,
+      required this.categoryid,
+      required this.notedocid,
+      required this.oldNote});
 
   @override
   State<StatefulWidget> createState() => _EditNotes();
@@ -28,7 +32,7 @@ class _EditNotes extends State<EditNotes> {
   editNotes() async {
     CollectionReference noteCollection = FirebaseFirestore.instance
         .collection('categories')
-        .doc(widget.notedocid)
+        .doc(widget.categoryid)
         .collection("note");
     // Call the user's CollectionReference to add a new user
 
@@ -36,8 +40,9 @@ class _EditNotes extends State<EditNotes> {
       try {
         isLoading = true;
         setState(() {});
-
-        await noteCollection.doc().update({"name": note.text});
+        // print("===============================");
+        // print(widget.notedocid);
+        await noteCollection.doc(widget.notedocid).update({"note": note.text});
 
         Navigator.of(context).push(
           MaterialPageRoute(
@@ -58,6 +63,12 @@ class _EditNotes extends State<EditNotes> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    note.text = widget.oldNote;
+  }
+
+  @override
   void dispose() {
     super.dispose();
     note.dispose();
@@ -67,7 +78,7 @@ class _EditNotes extends State<EditNotes> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Add Note"),
+        title: Text("Edit Note"),
       ),
       body: Form(
         key: formState,
@@ -89,7 +100,7 @@ class _EditNotes extends State<EditNotes> {
                     ),
                   ),
                   CustomButtonAuth(
-                    title: "Add",
+                    title: "Save",
                     onPressed: () {
                       editNotes();
                     },

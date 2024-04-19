@@ -76,6 +76,7 @@ class _Homepage extends State<HomePage> {
                       builder: (context) =>
                           NoteView(categoryid: data[index].id),
                     ));
+                    // print(data[index].id);
                   },
                   onLongPress: () {
                     AwesomeDialog(
